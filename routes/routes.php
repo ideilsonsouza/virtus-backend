@@ -15,4 +15,4 @@ use App\Http\Controllers\SystemController;
 |
 */
 
-Route::get('/', [SystemController::class, 'info']); //->middleware(['auth.jwt:team'])
+Route::get('/', [SystemController::class, 'info'])->middleware(['auth.jwt:team']);
