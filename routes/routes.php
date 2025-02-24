@@ -16,3 +16,16 @@ use App\Http\Controllers\SystemController;
 */
 
 Route::get('/', [SystemController::class, 'info'])->middleware(['auth.jwt:team']);
+
+Route::apiResource('users', UserController::class);
+
+Route::prefix('auth')->group(function () {
+    Route::get('', [AuthController::class, 'getAuth'])->middleware(['auth.jwt']);
+    Route::post('token', [AuthController::class, 'getToken']);
+    Route::post('register', [AuthController::class, 'store']);
+    Route::get('token', [AuthController::class, 'verifyToken'])->middleware(['auth.jwt']);
+    Route::prefix('admin')->group(function () {
+        Route::post('token', [AuthController::class, 'getTokenAdmin']);
+        Route::get('token', [AuthController::class, 'verifyTokenAdmin'])->middleware(['auth.jwt']);
+    });
+});
