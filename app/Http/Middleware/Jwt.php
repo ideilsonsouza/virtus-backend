@@ -31,8 +31,8 @@ class Jwt
                     ], Response::HTTP_UNAUTHORIZED);
                 }
             }
-            if (!$authUser->active) {
-                if (!$userToken->get('active')) {
+            if (!$authUser->enabled) {
+                if (!$userToken->get('enabled')) {
                     return response()->json([
                         'error' => 'Inactive user. Access denied.'
                     ], Response::HTTP_FORBIDDEN);

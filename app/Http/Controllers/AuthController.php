@@ -45,28 +45,29 @@ class AuthController extends Controller
                 'role' => 'user',
             ]);
 
-            $credentials = $this->validateCredentials($request);
+            if ($user) {
+                $credentials = $this->validateCredentials($request);
 
-            if (!Auth::validate($credentials)) {
-                return response()->json(['error' => 'Invalid credentials. Please check your email and password.'], Response::HTTP_UNAUTHORIZED);
+                if (!Auth::validate($credentials)) {
+                    return response()->json(['error' => 'Invalid credentials. Please check your email and password.'], Response::HTTP_UNAUTHORIZED);
+                }
+
+                if (!$token = auth('api')->attempt($credentials)) {
+                    return response()->json(['error' => 'Failed to generate token.'], Response::HTTP_BAD_REQUEST);
+                }
+
+                $additionalToken = [
+                    'user' => $user->only(['id', 'name', 'enabled', 'role']),
+                ];
+
+                $token = auth('api')->claims($additionalToken)->attempt($credentials);
+                return $this->response_token($token, $user);
+            } else {
+                return response()->json([
+                    'message' => 'User created successfully.',
+                    'user' => $user,
+                ], Response::HTTP_CREATED);
             }
-
-            if (!$token = auth('api')->attempt($credentials)) {
-                return response()->json(['error' => 'Failed to generate token.'], Response::HTTP_BAD_REQUEST);
-            }
-
-            $additionalToken = [
-                'user' => $user->only(['id', 'name', 'enabled', 'role']),
-            ];
-
-            $token = auth('api')->claims($additionalToken)->attempt($credentials);
-
-            return $this->response_token($token, $user);
-
-            // return response()->json([
-            //     'message' => 'User created successfully.',
-            //     'user' => $user,
-            // ], Response::HTTP_CREATED);
         } catch (\Throwable $th) {
             return response()->json(['error' => $th], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -142,7 +143,7 @@ class AuthController extends Controller
                 return response()->json(['error' => 'Your account is disabled.'], Response::HTTP_UNAUTHORIZED);
             }
 
-            return response()->json($user, Response::HTTP_ACCEPTED);
+            return response()->json(['user'=>$user], Response::HTTP_ACCEPTED);
         } catch (\Throwable $th) {
             return response()->json(['error' => 'Failed to authenticate token.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -164,7 +165,7 @@ class AuthController extends Controller
                 return response()->json(['error' => 'You do not have the required permissions.'], Response::HTTP_UNAUTHORIZED);
             }
 
-            return response()->json($user, Response::HTTP_ACCEPTED);
+            return response()->json(['user'=>$user], Response::HTTP_ACCEPTED);
         } catch (\Throwable $th) {
             return response()->json(['error' => 'Failed to authenticate token.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -209,14 +210,14 @@ class AuthController extends Controller
     {
         $data = [
             'token' => $token,
-            'type' => 'Bearer'
+            'type' => 'bearer'
         ];
 
         if ($user !== null) {
             $data['user'] = $user;
         }
 
-        return response()->json($data, Response::HTTP_ACCEPTED);
+        return response()->json($data, Response::HTTP_OK);
     }
 
     /**
